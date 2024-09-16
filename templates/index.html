@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GIF Grid Processor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+            padding: 20px;
+        }
+        #upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #gif-preview {
+            max-width: 100%;
+            max-height: 300px;
+        }
+        #gif-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            display: block;
+        }
+        #gif-container {
+            display: grid;
+            gap: 2px; /* Space between cells */
+            margin-top: 20px;
+        }
+        #gif-container img {
+            width: 13px; /* Size of the GIF cells */
+            height: 13px; /* Size of the GIF cells */
+            object-fit: cover;
+        }
+        #loading {
+            display: none;
+            margin-top: 20px;
+        }
+        #loading.show {
+            display: block;
+        }
+        .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>GIF Grid Processor</h1>
+    <div id="upload-container">
+        <input type="file" id="gif-upload" accept="image/gif">
+        <div id="gif-preview">
+            <img id="preview-img" src="" alt="Preview will appear here" style="display: none;">
+        </div>
+    </div>
+    <div>
+        <input type="number" id="grid-rows" placeholder="Rows (even number)" min="2">
+        <input type="number" id="grid-cols" placeholder="Columns (even number)" min="2">
+        <button id="process-gif">Process GIF</button>
+        <div id="error-message" class="error"></div>
+    </div>
+    <div id="loading">Loading...</div>
+    <div id="gif-container"></div>
+
+    <script>
+        const fileInput = document.getElementById('gif-upload');
+        const previewImg = document.getElementById('preview-img');
+        const gridRows = document.getElementById('grid-rows');
+        const gridCols = document.getElementById('grid-cols');
+        const processButton = document.getElementById('process-gif');
+        const loadingDiv = document.getElementById('loading');
+        const errorMessage = document.getElementById('error-message');
+
+        document.getElementById('gif-upload').addEventListener('change', () => {
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = (event) => {
+                    previewImg.src = event.target.result;
+                    previewImg.style.display = 'block';
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                previewImg.style.display = 'none';
+            }
+        });
+
+        document.getElementById('process-gif').addEventListener('click', async () => {
+            const rows = parseInt(gridRows.value, 10);
+            const cols = parseInt(gridCols.value, 10);
+
+            if (!fileInput.files[0] || isNaN(rows) || isNaN(cols) || rows % 2 !== 0 || cols % 2 !== 0) {
+                errorMessage.textContent = 'Please upload a GIF and specify valid even grid dimensions (both rows and columns must be even numbers).';
+                return;
+            }
+
+            errorMessage.textContent = ''; // Clear any previous error messages
+
+            // Disable inputs and buttons while processing
+            disableInputs(true);
+            showLoading(true);
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('rows', rows);
+            formData.append('cols', cols);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    displayGifs(result.files, rows, cols);
+                } else {
+                    alert(result.error);
+                }
+            } catch (error) {
+                alert('An error occurred while processing the GIF.');
+            } finally {
+                // Re-enable inputs and buttons after processing
+                disableInputs(false);
+                showLoading(false);
+            }
+        });
+
+        function disableInputs(disable) {
+            fileInput.disabled = disable;
+            gridRows.disabled = disable;
+            gridCols.disabled = disable;
+            processButton.disabled = disable;
+            document.querySelectorAll('#upload-container input, button').forEach(el => {
+                if (disable) {
+                    el.classList.add('disabled');
+                } else {
+                    el.classList.remove('disabled');
+                }
+            });
+        }
+
+        function showLoading(show) {
+            loadingDiv.classList.toggle('show', show);
+        }
+
+        function displayGifs(gifUrls, rows, cols) {
+            const container = document.getElementById('gif-container');
+            container.innerHTML = '';
+            container.style.gridTemplateRows = `repeat(${rows}, 13px)`; // Adjust to 13px size
+            container.style.gridTemplateColumns = `repeat(${cols}, 13px)`; // Adjust to 13px size
+
+            gifUrls.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                container.appendChild(img);
+            });
+        }
+    </script>
+</body>
+</html>
