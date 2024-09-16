@@ -3,6 +3,9 @@
 
 #Video 2 - https://www.loom.com/share/90e1139304c24dd48871b63ce1ebbafe?sid=a06ae1a5-aaab-4787-86f3-8ed2882b8493
 
+Additional:
+#Video 3 (Submitted After 3PM PST) - https://www.loom.com/share/58002a59e86e47688ab50a6e9d4867e1?sid=6d954026-e058-4516-8446-753518fce88a
+
 ## Overview
 
 The GIF Grid Processor is a web application that allows users to upload an animated GIF, split it into a grid of smaller animated GIFs, and display them in a synchronized manner on an HTML page. This application processes GIFs without relying on external libraries and can handle various grid sizes and dimensions.
